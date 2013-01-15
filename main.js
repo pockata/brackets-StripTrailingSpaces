@@ -4,118 +4,140 @@
 /** Simple extension that strips whitespace at the end of each line */
 define(function (require, exports, module) {
 
-	"use strict";
+    "use strict";
 
-	// Brackets modules
-	var	Commands        = brackets.getModule('command/Commands'),
-		CommandManager  = brackets.getModule('command/CommandManager'),
-		DocumentManager = brackets.getModule('document/DocumentManager'),
-		EditorManager   = brackets.getModule('editor/EditorManager'),
-		Menus           = brackets.getModule('command/Menus');
+    // Brackets modules
+    var	Commands        = brackets.getModule('command/Commands'),
+        CommandManager  = brackets.getModule('command/CommandManager'),
+        DocumentManager = brackets.getModule('document/DocumentManager'),
+        EditorManager   = brackets.getModule('editor/EditorManager'),
+        StringUtils     = brackets.getModule('utils/StringUtils'),
+        Menus           = brackets.getModule('command/Menus');
 
-	// Extension variables
-	var EXT_ID          = 'org.pockata.stripTrailingSpaces',
-		settings        = require('settings'),
-		shouldStrip     = !!settings.autostrip,
-		strippedOnce    = false, // needed for documentSaved loop.
-		menu            = Menus.getMenu(Menus.AppMenuBar.EDIT_MENU);
+    // Extension variables
+    var EXT_ID          = 'org.pockata.stripTrailingSpaces',
+        settings        = require('settings'),
+        shouldStrip     = !!settings.autostrip,
+        strippedOnce    = false, // needed for documentSaved loop.
+        menu            = Menus.getMenu(Menus.AppMenuBar.EDIT_MENU);
 
+    // Strips whitespace from the current document
+    function doStrip() {
 
-	// Strips whitespace from end of line
-	function stripWhitespace(text) {
-		// this is the best I came up with
-		// I'm open to suggestions
-		return text.replace(/[ \t]+$/gm, '');
-	}
+        // get the full editor
+        // TODO: test with getActiveEditor()
+        var editor = EditorManager.getCurrentFullEditor(),
+            curDoc = editor.document;
 
-	// Strips whitespace from the current document
-	function doStrip() {
+        if (curDoc) {
+            
+            var text = curDoc.getText(),
+                regexp = /[ \t]+$/gm,
+                linesToStrip = [],
+                i = 0,
+                match;
+            
+            // fill an array with line numbers to strip
+            while ((match = regexp.exec(text)) !== null) {
+                linesToStrip[i++] = StringUtils.offsetToLineNum(text, match.index);
+            }
+            
+            // If no lines to strip, stop here
+            if (!linesToStrip.length) {
+                return false;
+            }
+            
+            // store current cursor and scroll positions
+            var cursorPos = editor.getCursorPos(),
+                scrollPos = editor.getScrollPos();
 
-		// get the full editor
-		var editor = EditorManager.getCurrentFullEditor(),
-			curDoc = editor.document;
+            // set the text
+            curDoc.batchOperation(function () {
+                
+                while (i--) {
+                    // get a line for stripping
+                    var ln = curDoc.getLine(linesToStrip[i]);
+                    
+                    // replace the whole line with a stripped one
+                    curDoc.replaceRange(ln.replace(/\s+$/, ''), {
+                        'line': linesToStrip[i],
+                        'ch': 0
+                    }, {
+                        'line': linesToStrip[i],
+                        'ch': ln.length
+                    });
+                }
+            });
 
-		if (curDoc) {
+            // restore cursor and scroll positons
+            editor.setCursorPos(cursorPos);
+            editor.setScrollPos(scrollPos.x, scrollPos.y);
 
-			// strip the document text
-			var stripped = stripWhitespace(curDoc.getText());
+            return true;
+        }
 
-			// store current cursor and scroll positions
-			var cursorPos = editor.getCursorPos(),
-				scrollPos = editor.getScrollPos();
+        return false;
+    }
 
-			// set the text
-			curDoc.setText(stripped);
+    // Handles file save
+    function handleSave() {
 
-			// restore cursor and scroll positons
-			editor.setCursorPos(cursorPos);
-			editor.setScrollPos(scrollPos.x, scrollPos.y);
+        // if menu item is not checked or
+        // we have already stripped, stop here
+        if (!shouldStrip || strippedOnce) {
+            strippedOnce = false;
+            return;
+        }
 
-			return true;
-		}
+        var stripped = doStrip();
 
-		return false;
-	}
+        if (stripped) {
 
-	// Handles file save
-	function handleSave() {
+            // this prevents the infinite loop
+            // an onBeforeSave event would be nice
+            strippedOnce = true;
 
-		// if menu item is not checked or
-		// we have already stripped, stop here
-		if (!shouldStrip || strippedOnce) {
-			strippedOnce = false;
-			return;
-		}
+            // run a file save. It causes the loop
+            // by firing documentSaved again. Better way?
+            CommandManager.execute(Commands.FILE_SAVE);
+        } else {
+            strippedOnce = false;
+        }
+    }
 
-		var stripped = doStrip();
+    // Create menu item
+    if (settings.createMenu) {
 
-		if (stripped) {
+        // Register command
+        var cmd = CommandManager.register('Strip trailing spaces', EXT_ID, function () {
+            shouldStrip = !shouldStrip;
+            cmd.setChecked(shouldStrip);
+        });
 
-			// this prevents the infinite loop
-			// an onBeforeSave event would be nice
-			strippedOnce = true;
+        cmd.setChecked(shouldStrip);
 
-			// run a file save. It causes the loop
-			// by firing documentSaved again. Better way?
-			CommandManager.execute(Commands.FILE_SAVE);
-		} else {
-			strippedOnce = false;
-		}
-	}
+        // Setup menu item
+        menu.addMenuDivider(Menus.LAST);
+        menu.addMenuItem(EXT_ID, null, Menus.LAST);
+    }
 
-	// Create menu item
-	if (settings.createMenu) {
+    // Attach events
+    $(DocumentManager).on("documentSaved", handleSave);
 
-		// Register command
-		var cmd = CommandManager.register('Strip trailing spaces', EXT_ID, function () {
-			shouldStrip = !shouldStrip;
-			cmd.setChecked(shouldStrip);
-		});
+    if (settings.stripOnDocChange) {
 
-		cmd.setChecked(shouldStrip);
+        $(DocumentManager).on("currentDocumentChange", function () {
 
-		// Setup menu item
-		menu.addMenuDivider(Menus.LAST);
-		menu.addMenuItem(EXT_ID, null, Menus.LAST);
-	}
+            // Check for an active editor
+            var editor = EditorManager.getCurrentFullEditor();
+            if (!editor) {
+                return;
+            }
 
-	// Attach events
-	$(DocumentManager).on("documentSaved", handleSave);
-
-	if (settings.stripOnDocChange) {
-
-		$(DocumentManager).on("currentDocumentChange", function () {
-
-			// Check for an active editor
-			var editor = EditorManager.getCurrentFullEditor();
-			if (!editor) {
-				return;
-			}
-
-			// strip if enabled and doc is not saved
-			if (shouldStrip && editor.document.isDirty) {
-				doStrip();
-			}
-		});
-	}
+            // strip if enabled and doc is not saved
+            if (shouldStrip && editor.document.isDirty) {
+                doStrip();
+            }
+        });
+    }
 });
