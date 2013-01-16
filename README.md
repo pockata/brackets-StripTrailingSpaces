@@ -12,5 +12,9 @@ Open the extensions folder via `Help -> Show Extensions Folder` and clone the re
 
 
 ##Changelog
+###16.01.2013
+Rewrote the stripping algorithm so it plays nice with Brackets' other features.
+(Replaced setText with a series of replaceRange)
+
 ###05.01.2013
 Initial release
