@@ -25,39 +25,38 @@ define(function (require, exports, module) {
     function doStrip() {
 
         // get the full editor
-        // TODO: test with getActiveEditor()
-        var editor = EditorManager.getCurrentFullEditor(),
+        var editor = EditorManager.getActiveEditor(),
             curDoc = editor.document;
 
         if (curDoc) {
-            
+
             var text = curDoc.getText(),
                 regexp = /[ \t]+$/gm,
                 linesToStrip = [],
                 i = 0,
                 match;
-            
+
             // fill an array with line numbers to strip
             while ((match = regexp.exec(text)) !== null) {
                 linesToStrip[i++] = StringUtils.offsetToLineNum(text, match.index);
             }
-            
+
             // If no lines to strip, stop here
             if (!linesToStrip.length) {
                 return false;
             }
-            
+
             // store current cursor and scroll positions
             var cursorPos = editor.getCursorPos(),
                 scrollPos = editor.getScrollPos();
 
             // set the text
             curDoc.batchOperation(function () {
-                
+
                 while (i--) {
                     // get a line for stripping
                     var ln = curDoc.getLine(linesToStrip[i]);
-                    
+
                     // replace the whole line with a stripped one
                     curDoc.replaceRange(ln.replace(/\s+$/, ''), {
                         'line': linesToStrip[i],
