@@ -2,11 +2,10 @@
 /*global define */
 // Extension configuration
 define({
-    // Wheather or not to run strip on save
+    // Run strip on save?
     'autostrip': true,
-    // Wheather or not to add menu items
-    'createMenu': true,
-    // Wheather or not to strip when the document in the
-    // working set is changed
+    // Auto-strip when the working document is changed?
     'stripOnDocChange': true
+    // Add to menu items?
+    'createMenu': true,
 });
