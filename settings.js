@@ -5,7 +5,7 @@ define({
     // Run strip on save?
     'autostrip': true,
     // Auto-strip when the working document is changed?
-    'stripOnDocChange': true
+    'stripOnDocChange': true,
     // Add to menu items?
-    'createMenu': true,
+    'createMenu': true
 });
