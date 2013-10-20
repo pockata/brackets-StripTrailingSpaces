@@ -2,8 +2,6 @@
 /*global define */
 // Extension configuration
 define({
-    // Run strip on save?
-    'autostrip': true,
     // Auto-strip when the working document is changed?
     'stripOnDocChange': true,
     // Add to menu items?
