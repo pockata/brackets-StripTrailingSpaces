@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "pockata.striptrailingspaces",
     "title": "Strip trailing spaces",
     "description": "A Brackets extension to strip traling whitespace at the end of the line on document save.",
