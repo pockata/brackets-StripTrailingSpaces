@@ -18,8 +18,8 @@ define(function (require, exports, module) {
     // Extension variables
     var EXT_ID          = 'org.pockata.stripTrailingSpaces',
         settings        = require('settings'),
-        preferences     = PreferencesManager.getPreferenceStorage(module, settings),
-        shouldStrip     = preferences.getValue("autostrip"),
+        preferences     = PreferencesManager.getExtensionPrefs(EXT_ID),
+        shouldStrip     = preferences.get("autostrip"),
         strippedOnce    = false, // needed for documentSaved loop.
         menu            = Menus.getMenu(Menus.AppMenuBar.EDIT_MENU);
 
@@ -112,7 +112,7 @@ define(function (require, exports, module) {
         // Register command
         var cmd = CommandManager.register('Strip trailing spaces', EXT_ID, function () {
             shouldStrip = !shouldStrip;
-            preferences.setValue("autostrip", shouldStrip);
+            preferences.set("autostrip", shouldStrip);
             cmd.setChecked(shouldStrip);
         });
 
