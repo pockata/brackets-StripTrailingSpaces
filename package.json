@@ -3,7 +3,7 @@
     "title": "Strip trailing spaces",
     "description": "A Brackets extension to strip traling whitespace at the end of the line on document save.",
     "homepage": "https://github.com/pockata/brackets-StripTrailingSpaces",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "author": "Rosen Stoyanov <me@pockata.org> (http://pockata.org)",
     "license": "MIT",
     "engines": {
