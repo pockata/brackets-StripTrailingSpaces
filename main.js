@@ -124,11 +124,11 @@ define(function (require, exports, module) {
     }
 
     // Attach events
-    $(DocumentManager).on("documentSaved", handleSave);
+    DocumentManager.on("documentSaved", handleSave);
 
     if (settings.stripOnDocChange) {
 
-        $(DocumentManager).on("currentDocumentChange", function () {
+        DocumentManager.on("currentFileChange", function () {
 
             // Check for an active editor
             var editor = EditorManager.getCurrentFullEditor();
